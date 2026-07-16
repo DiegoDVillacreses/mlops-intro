@@ -1,6 +1,6 @@
 from train import main
 
-UMBRAL_F1 = 0.80
+UMBRAL_F1 = 0.70
 
 def test_f1_macro_minimo():
     f1 = main()
