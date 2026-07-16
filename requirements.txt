@@ -6,3 +6,5 @@ azure-identity
 azure-mgmt-storage
 azure-data-tables
 python-dotenv
+fastapi
+uvicorn
