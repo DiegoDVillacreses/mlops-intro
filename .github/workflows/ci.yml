@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  ACR_NAME: dockerazureintromlops
+  ACR_NAME: dockerazureintromlopsacr
   RESOURCE_GROUP: mlops-intro-rg
   CONTAINERAPP_NAME: iris-api-2
 
