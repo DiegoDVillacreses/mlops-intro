@@ -70,7 +70,7 @@ STORAGE_ACCOUNT_NAME = os.environ.get("AZURE_STORAGE_ACCOUNT", "mlopsintrostorag
 TABLE_NAME           = os.environ.get("AZURE_TABLE_NAME", "irisdata")
 
 FEATURES = ["sepal_length", "petal_length", "sepal_width", "petal_width"]
-FEATURES = ["sepal_length"]
+#FEATURES = ["sepal_length"]
 TARGET   = "target"
 MODEL_PATH = "modelo.pkl"
 # ---------------------
@@ -127,7 +127,7 @@ def entrenar(df):
     # (main.py) obtiene predicciones consistentes sin escalar manualmente la entrada.
     pipeline = Pipeline([
         ("scaler", StandardScaler()),
-        ("clf", LogisticRegression(max_iter=1000)),
+        ("clf", LogisticRegression(max_iter=1000, penalty = None)),
     ])
     pipeline.fit(X_train, y_train)
 
