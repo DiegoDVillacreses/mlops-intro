@@ -69,7 +69,8 @@ RESOURCE_GROUP_NAME  = os.environ.get("AZURE_RESOURCE_GROUP", "mlops-intro-rg")
 STORAGE_ACCOUNT_NAME = os.environ.get("AZURE_STORAGE_ACCOUNT", "mlopsintrostorage")
 TABLE_NAME           = os.environ.get("AZURE_TABLE_NAME", "irisdata")
 
-FEATURES = ["sepal_length", "petal_length", "sepal_width", "petal_width"]
+FEATURES = ["sepal_length", "petal_length", "sepal_width", "petal_width"] 
+
 #FEATURES = ["sepal_length"]
 TARGET   = "target"
 MODEL_PATH = "modelo.pkl"
