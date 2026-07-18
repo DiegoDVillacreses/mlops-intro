@@ -111,6 +111,7 @@ def main() -> int:
     # 2. CALCULAR — llama a iris-api-2 y computa el F1 Macro
     y_pred = predecir_lote(os.environ["IRIS_API_URL"], df[CARACTERISTICAS])
     f1 = float(f1_score(df["target"], y_pred, average="macro"))
+    print("f1 score macro, testing:", f1)
     breach = int(f1 < args.umbral)
 
     print(
