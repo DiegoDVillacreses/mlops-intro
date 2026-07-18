@@ -1,0 +1,45 @@
+# .github/workflows/monitor.yml
+name: monitor-f1
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"        # cada 5 minutos (UTC)
+  workflow_dispatch:              # permite dispararlo a mano desde la pestaña Actions
+    inputs:
+      ventana_horas:
+        description: "Ventana en horas para el cálculo del F1"
+        required: true
+        default: "1"
+
+permissions:
+  id-token: write                 # necesario para OIDC (igual que en ci.yml de la S2)
+  contents: read
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-monitor.txt
+
+      # Autenticación a Azure con OIDC — mismo Service Principal mlops-intro-ci de la Sesión 2
+      - uses: azure/login@v2
+        with:
+          client-id:       ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id:       ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Correr monitor
+        env:
+          AZURE_STORAGE_CONNECTION_STRING:       ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          IRIS_API_URL:                          ${{ secrets.IRIS_API_URL }}
+          APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPINSIGHTS_CONNECTION_STRING }}
+        run: |
+          python monitor.py \
+            --ventana-horas ${{ github.event.inputs.ventana_horas || '1' }}
