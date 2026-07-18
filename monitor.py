@@ -24,6 +24,8 @@ import argparse
 import os
 import sys
 from datetime import datetime, timedelta, timezone
+from dotenv import load_dotenv
+load_dotenv()
 
 import pandas as pd
 import requests
@@ -53,14 +55,15 @@ def leer_lote(cadena_conexion: str, tabla: str, ventana_horas: int) -> pd.DataFr
 
 
 def predecir_lote(url_api: str, X: pd.DataFrame) -> list:
-    """Llama al endpoint /predict de iris-api-2 con el lote completo."""
-    r = requests.post(
-        f"{url_api}/predict",
-        json={"data": X.to_dict(orient="records")},
-        timeout=30,
-    )
-    r.raise_for_status()
-    return r.json()["predicciones"]
+    """Llama al endpoint /predict de iris-api-2, una fila a la vez."""
+    predicciones = []
+    for _, fila in X.iterrows():
+        payload = fila.to_dict()
+        r = requests.post(f"{url_api}/predict", json=payload, timeout=30)
+        r.raise_for_status()
+        pred = r.json()
+        predicciones.append(pred["prediccion"])
+    return predicciones
 
 
 def enviar_a_app_insights(f1: float, breach: int, n_muestras: int) -> None:
@@ -75,7 +78,7 @@ def enviar_a_app_insights(f1: float, breach: int, n_muestras: int) -> None:
     )
     m = metrics.get_meter("iris.monitor")
 
-    hist_f1 = m.create_histogram("iris_f1_score", description="F1 weighted por corrida")
+    hist_f1 = m.create_histogram("iris_f1_score", description="F1 macro por corrida")
     hist_breach = m.create_histogram("iris_breach", description="1 si F1 < umbral")
     hist_n = m.create_histogram("iris_n_muestras", description="tamaño del lote evaluado")
 
@@ -107,7 +110,7 @@ def main() -> int:
 
     # 2. CALCULAR — llama a iris-api-2 y computa el F1 weighted
     y_pred = predecir_lote(os.environ["IRIS_API_URL"], df[CARACTERISTICAS])
-    f1 = float(f1_score(df["species"], y_pred, average="weighted"))
+    f1 = float(f1_score(df["target"], y_pred, average="macro"))
     breach = int(f1 < args.umbral)
 
     print(
