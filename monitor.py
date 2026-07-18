@@ -35,7 +35,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import metrics
 
 
-UMBRAL_POR_DEFECTO = 0.70
+UMBRAL_POR_DEFECTO = 0.700
 MIN_MUESTRAS = 30
 CARACTERISTICAS = ["sepal_length", "sepal_width", "petal_length", "petal_width"]
 
