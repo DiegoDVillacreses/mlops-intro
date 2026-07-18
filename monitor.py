@@ -35,7 +35,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import metrics
 
 
-UMBRAL_POR_DEFECTO = 0.80
+UMBRAL_POR_DEFECTO = 0.70
 MIN_MUESTRAS = 30
 CARACTERISTICAS = ["sepal_length", "sepal_width", "petal_length", "petal_width"]
 
@@ -108,13 +108,13 @@ def main() -> int:
         )
         return 0
 
-    # 2. CALCULAR — llama a iris-api-2 y computa el F1 weighted
+    # 2. CALCULAR — llama a iris-api-2 y computa el F1 Macro
     y_pred = predecir_lote(os.environ["IRIS_API_URL"], df[CARACTERISTICAS])
     f1 = float(f1_score(df["target"], y_pred, average="macro"))
     breach = int(f1 < args.umbral)
 
     print(
-        f"F1 weighted en las últimas {args.ventana_horas}h: {f1:.4f} "
+        f"F1 Macro en las últimas {args.ventana_horas}h: {f1:.4f} "
         f"(n={len(df)})  breach={breach}"
     )
 
