@@ -1,0 +1,6 @@
+azure-data-tables>=12.5
+azure-monitor-opentelemetry>=1.6
+opentelemetry-sdk>=1.27
+scikit-learn>=1.5
+pandas>=2.2
+requests>=2.32
