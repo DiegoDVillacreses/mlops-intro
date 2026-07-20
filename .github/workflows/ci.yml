@@ -1,100 +1,100 @@
-name: CI/CD - Entrenar, validar y desplegar
+# name: CI/CD - Entrenar, validar y desplegar
 
-on:
-  push:
-    branches: [main]
+# on:
+#   push:
+#     branches: [main]
 
-permissions:
-  id-token: write      # necesario para el login OIDC contra Azure
-  contents: read
+# permissions:
+#   id-token: write      # necesario para el login OIDC contra Azure
+#   contents: read
 
-env:
-  ACR_NAME: dockerazureintromlopsacr
-  RESOURCE_GROUP: mlops-intro-rg
-  CONTAINERAPP_NAME: iris-api-2
+# env:
+#   ACR_NAME: dockerazureintromlopsacr
+#   RESOURCE_GROUP: mlops-intro-rg
+#   CONTAINERAPP_NAME: iris-api-2
 
-jobs:
-  # ---------------------------------------------------------------
-  # CI: entrena el modelo y valida el F1 macro. Es el GATE.
-  # ---------------------------------------------------------------
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+# jobs:
+#   # ---------------------------------------------------------------
+#   # CI: entrena el modelo y valida el F1 macro. Es el GATE.
+#   # ---------------------------------------------------------------
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
+#       - uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.12'
 
-      - run: pip install -r requirements.txt
+#       - run: pip install -r requirements.txt
 
-      - name: Login en Azure (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#       - name: Login en Azure (OIDC)
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Entrenar y validar F1 macro
-        env:
-          AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          AZURE_STORAGE_ACCOUNT: mlopsintrostorage
-        run: python test_model.py
+#       - name: Entrenar y validar F1 macro
+#         env:
+#           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#           AZURE_STORAGE_ACCOUNT: mlopsintrostorage
+#         run: python test_model.py
 
-      # El modelo que ACABA de pasar el gate se guarda como artifact,
-      # para que el job de deploy despliegue exactamente ese y no otro.
-      - name: Guardar modelo.pkl validado
-        uses: actions/upload-artifact@v4
-        with:
-          name: modelo
-          path: modelo.pkl
+#       # El modelo que ACABA de pasar el gate se guarda como artifact,
+#       # para que el job de deploy despliegue exactamente ese y no otro.
+#       - name: Guardar modelo.pkl validado
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: modelo
+#           path: modelo.pkl
 
-  # ---------------------------------------------------------------
-  # CD: empaqueta el modelo validado y lo despliega.
-  # 'needs: test' es el gate: si el F1 no pasó, este job NO corre.
-  # ---------------------------------------------------------------
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+#   # ---------------------------------------------------------------
+#   # CD: empaqueta el modelo validado y lo despliega.
+#   # 'needs: test' es el gate: si el F1 no pasó, este job NO corre.
+#   # ---------------------------------------------------------------
+#   deploy:
+#     needs: test
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
 
-      # Recuperamos el modelo.pkl validado por el job anterior.
-      # NO reentrenamos: se despliega el artefacto que pasó el gate.
-      - name: Recuperar modelo.pkl validado
-        uses: actions/download-artifact@v4
-        with:
-          name: modelo
+#       # Recuperamos el modelo.pkl validado por el job anterior.
+#       # NO reentrenamos: se despliega el artefacto que pasó el gate.
+#       - name: Recuperar modelo.pkl validado
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: modelo
 
-      - name: Login en Azure (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+#       - name: Login en Azure (OIDC)
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ secrets.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+#           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Login en el Container Registry
-        run: az acr login --name ${{ env.ACR_NAME }}
+#       - name: Login en el Container Registry
+#         run: az acr login --name ${{ env.ACR_NAME }}
 
-      # El runner ya es linux/amd64, así que NO hace falta --platform.
-      # El tag es el SHA del commit: cada despliegue es rastreable.
-      - name: Construir y subir la imagen
-        run: |
-          IMAGE=${{ env.ACR_NAME }}.azurecr.io/iris-api-2:${{ github.sha }}
-          docker build -t $IMAGE .
-          docker push $IMAGE
+#       # El runner ya es linux/amd64, así que NO hace falta --platform.
+#       # El tag es el SHA del commit: cada despliegue es rastreable.
+#       - name: Construir y subir la imagen
+#         run: |
+#           IMAGE=${{ env.ACR_NAME }}.azurecr.io/iris-api-2:${{ github.sha }}
+#           docker build -t $IMAGE .
+#           docker push $IMAGE
 
-      - name: Desplegar en Container Apps
-        run: |
-          az containerapp update \
-            --name ${{ env.CONTAINERAPP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.ACR_NAME }}.azurecr.io/iris-api-2:${{ github.sha }}
+#       - name: Desplegar en Container Apps
+#         run: |
+#           az containerapp update \
+#             --name ${{ env.CONTAINERAPP_NAME }} \
+#             --resource-group ${{ env.RESOURCE_GROUP }} \
+#             --image ${{ env.ACR_NAME }}.azurecr.io/iris-api-2:${{ github.sha }}
 
-      - name: Mostrar la URL pública
-        run: |
-          az containerapp show \
-            --name ${{ env.CONTAINERAPP_NAME }} \
-            --resource-group ${{ env.RESOURCE_GROUP }} \
-            --query properties.configuration.ingress.fqdn \
-            --output tsv
+#       - name: Mostrar la URL pública
+#         run: |
+#           az containerapp show \
+#             --name ${{ env.CONTAINERAPP_NAME }} \
+#             --resource-group ${{ env.RESOURCE_GROUP }} \
+#             --query properties.configuration.ingress.fqdn \
+#             --output tsv
